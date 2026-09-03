@@ -152,3 +152,18 @@ def mean_token_kl(reference_logits, candidate_logits, attention_mask) -> float:
     kl = torch.sum(ref_p * (ref_logp - cand_logp), dim=-1)
     valid = attention_mask.bool()
     return float(kl[valid].mean().item())
+
+
+def token_kl_by_sequence(reference_logits, candidate_logits, attention_mask) -> np.ndarray:
+    """Mean token KL for each sequence independently."""
+    import torch
+    import torch.nn.functional as F
+
+    ref_logp = F.log_softmax(reference_logits.float(), dim=-1)
+    cand_logp = F.log_softmax(candidate_logits.float(), dim=-1)
+    ref_p = ref_logp.exp()
+    kl = torch.sum(ref_p * (ref_logp - cand_logp), dim=-1)
+    mask = attention_mask.bool()
+    num = (kl * mask).sum(dim=1)
+    den = mask.sum(dim=1).clamp_min(1)
+    return (num / den).detach().cpu().numpy().astype(float)
