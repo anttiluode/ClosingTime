@@ -1,0 +1,26 @@
+name: Gate 3 causal replication
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "experiments/gate3_causal_replication.py"
+      - "src/closingtime/**"
+      - "results/GATE3_PROTOCOL.md"
+      - ".github/workflows/gate3.yml"
+
+jobs:
+  gate3:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e .[models]
+      - run: python experiments/gate3_causal_replication.py --texts 16 --controls 256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gate3-results
+          path: results/gate3/audit.json
