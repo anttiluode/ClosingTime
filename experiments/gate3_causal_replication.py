@@ -184,6 +184,9 @@ def run_condition(
             "layer": int(layer),
             "median_damage_split_rho": float(np.nanmedian(reliability)),
             "positive_damage_split_targets": int(np.sum(reliability > 0)),
+            "damage_split_target_rhos": [
+                None if not np.isfinite(x) else float(x) for x in reliability
+            ],
             "median_intervention_kl": float(np.nanmedian(damage)),
         }
         for name, D in predictors.items():
@@ -225,24 +228,23 @@ def run_condition(
             )
         return np.asarray(vals, dtype=float)
 
-    reliability_vals = []
-    for payload in payloads:
-        # Reliability was already computed before payload storage; reconstructing
-        # it is unnecessary. Pull from rows at the layer level for the locked
-        # median-of-targets approximation is not precise, so retain below from
-        # a second lightweight pass using stored half matrices would cost memory.
-        pass
+    reliability_vals = np.asarray(
+        [
+            x
+            for row in rows
+            for x in row["damage_split_target_rhos"]
+            if x is not None
+        ],
+        dtype=float,
+    )
 
-    # Exact target-level reliability was used per layer; pool layer medians only
-    # for reporting would hide weak layers. Instead use the median of the eight
-    # layer target-medians as a conservative scalar gate.
     aggregate = {
         "layers": len(rows),
         "num_heads": int(num_heads),
         "total_layer_targets": int(total_targets),
         "routing_copy_max_attention_error": verify_error,
         "median_damage_split_reliability": float(
-            np.median([r["median_damage_split_rho"] for r in rows])
+            np.median(reliability_vals)
         ),
         "rows": rows,
         "permutation": permutation,
