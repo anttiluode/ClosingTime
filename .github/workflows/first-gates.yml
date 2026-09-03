@@ -2,13 +2,6 @@ name: First real gates
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - "src/**"
-      - "experiments/**"
-      - "results/GATE*_PROTOCOL.md"
-      - "pyproject.toml"
-      - ".github/workflows/first-gates.yml"
 
 jobs:
   gate1:
